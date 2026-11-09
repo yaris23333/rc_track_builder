@@ -1,4 +1,4 @@
-import type { Primitive, TileDef } from '../types';
+import type { Port, Primitive, TileDef } from '../types';
 
 const OUTLINE: Primitive = {
   kind: 'rect',
@@ -9,6 +9,16 @@ const OUTLINE: Primitive = {
   layer: 'TILE_OUTLINE',
   rx: 0.04,
 };
+
+const STRAIGHT_PORTS: Port[] = [
+  { id: 'w', side: 'w', offset: 0.5, dir: 'both', laneWidth: 1.5 },
+  { id: 'e', side: 'e', offset: 0.5, dir: 'both', laneWidth: 1.5 },
+];
+
+const CURVE_PORTS: Port[] = [
+  { id: 'w', side: 'w', offset: 0.5, dir: 'both', laneWidth: 1.5 },
+  { id: 's', side: 's', offset: 0.5, dir: 'both', laneWidth: 1.5 },
+];
 
 const LANE_TOP: Primitive = {
   kind: 'line',
@@ -129,6 +139,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '基础',
     description: '3m 直线段',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: straightBase(),
   },
   {
@@ -138,6 +149,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '弯道',
     description: '90° 弯道，连接左侧与下方',
     sizeM: { w: 3, h: 3 },
+    ports: CURVE_PORTS,
     primitives: curve90(),
   },
   {
@@ -147,6 +159,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '组合',
     description: '单个跳台',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: [...straightBase(), band(1.34, 0.32, 'rgba(37, 99, 235, 0.16)'), shortLine(1.34, 0.75, 2.25), shortLine(1.66, 0.75, 2.25)],
   },
   {
@@ -156,6 +169,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '组合',
     description: '两个连续小跳',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: [
       ...straightBase(),
       band(1.0, 0.2, 'rgba(37, 99, 235, 0.14)'),
@@ -173,6 +187,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '组合',
     description: '三个大滚筒',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: [
       ...straightBase(),
       band(0.66, 0.34, 'rgba(249, 115, 22, 0.16)'),
@@ -193,6 +208,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '组合',
     description: '六个小滚筒',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: [
       ...straightBase(),
       ...[0.5, 0.9, 1.3, 1.7, 2.1, 2.5].flatMap((x) => [
@@ -208,6 +224,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '组合',
     description: '桌面/平台',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: table(),
   },
   {
@@ -217,6 +234,7 @@ export const TILE_DEFS: TileDef[] = [
     categoryLabel: '设施',
     description: '带黑白格起终点线',
     sizeM: { w: 3, h: 3 },
+    ports: STRAIGHT_PORTS,
     primitives: startFinish(),
   },
 ];

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BoardSettingsModal } from './components/BoardSettingsModal';
 import { Canvas } from './components/Canvas';
 import { Icon } from './components/Icons';
@@ -9,6 +9,7 @@ import { TopBar } from './components/TopBar';
 import { saveLocalDoc } from './model/share';
 import { useStore } from './store/useStore';
 import { formatM } from './model/geometry';
+import { validateTrack } from './core/validate';
 import { isTypingTarget } from './utils/dom';
 
 export default function App() {
@@ -30,6 +31,8 @@ export default function App() {
   const requestFit = useStore((state) => state.requestFit);
   const showToast = useStore((state) => state.showToast);
   const startupNotice = useStore((state) => state.startupNotice);
+
+  const validation = useMemo(() => validateTrack(doc), [doc]);
 
   const [boardOpen, setBoardOpen] = useState(false);
   const noticeShown = useRef(false);
@@ -129,21 +132,34 @@ export default function App() {
 
   return (
     <div className="app">
-      <TopBar onOpenBoard={() => setBoardOpen(true)} />
+      <TopBar onOpenBoard={() => setBoardOpen(true)} validation={validation} />
 
       <main className="workspace">
         <Palette />
-        <Canvas />
+        <Canvas validation={validation} />
         <Inspector onOpenBoard={() => setBoardOpen(true)} />
       </main>
 
       <footer className="statusbar">
         <div className="status-left">
-          <span className={`status-dot ${readOnly ? 'is-readonly' : ''}`} />
-          <span>{readOnly ? '只读预览' : '就绪'}</span>
+          <span
+            className={`status-dot ${readOnly ? 'is-readonly' : validation.closed ? '' : 'is-open'}`}
+          />
+          <span>
+            {readOnly
+              ? '只读预览'
+              : doc.tiles.length === 0
+                ? '就绪'
+                : validation.closed
+                  ? '已闭合'
+                  : '未闭合'}
+          </span>
           <span className="status-sep" />
           <span className="status-muted">
             {doc.tiles.length} 块瓦片 · {formatM(doc.board.widthM * doc.board.heightM)} m² 画布
+            {doc.tiles.length > 0 && !validation.closed
+              ? ` · ${validation.stats.gaps} 处断点`
+              : ''}
           </span>
         </div>
         <div className="status-center">

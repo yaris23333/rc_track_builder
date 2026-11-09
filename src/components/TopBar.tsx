@@ -3,11 +3,19 @@ import { boardCells, clamp, formatM } from '../model/geometry';
 import { clearShareHash } from '../model/share';
 import { useStore } from '../store/useStore';
 import { ExportMenu } from './ExportMenu';
+import type { ValidationResult } from '../types';
 import { Icon } from './Icons';
 import { ShareDialog } from './ShareDialog';
 
-export function TopBar({ onOpenBoard }: { onOpenBoard: () => void }) {
+export function TopBar({
+  onOpenBoard,
+  validation,
+}: {
+  onOpenBoard: () => void;
+  validation: ValidationResult;
+}) {
   const doc = useStore((state) => state.doc);
+  const showToast = useStore((state) => state.showToast);
   const viewport = useStore((state) => state.viewport);
   const setViewport = useStore((state) => state.setViewport);
   const requestFit = useStore((state) => state.requestFit);
@@ -21,6 +29,41 @@ export function TopBar({ onOpenBoard }: { onOpenBoard: () => void }) {
 
   const [shareOpen, setShareOpen] = useState(false);
   const { cols, rows } = boardCells(doc.board);
+
+  const hasTiles = doc.tiles.length > 0;
+  const errorCount = validation.issues.filter((item) => item.severity === 'error').length;
+  const closureLabel = !hasTiles
+    ? '空画布'
+    : validation.closed
+      ? '已闭合'
+      : validation.stats.gaps > 0
+        ? `未闭合 · ${validation.stats.gaps} 处断点`
+        : `未闭合 · ${errorCount} 个问题`;
+  const closureTitle = !hasTiles
+    ? '还没有放置瓦片'
+    : validation.closed
+      ? '所有端口已连接，构成闭合回路'
+      : validation.issues
+          .filter((item) => item.severity === 'error')
+          .slice(0, 6)
+          .map((item) => item.message)
+          .join('\n');
+
+  const onClosureClick = () => {
+    if (!hasTiles) {
+      showToast('从左侧选择一块瓦片，点击画布开始拼赛道', 'info');
+      return;
+    }
+    if (validation.closed) {
+      showToast('赛道已闭合，可以导出 PNG / PDF / DXF 了', 'success');
+      return;
+    }
+    const first = validation.issues
+      .filter((item) => item.severity === 'error')
+      .slice(0, 3)
+      .map((item) => item.message);
+    showToast(first.join('；') || '还有未连接的问题', 'error');
+  };
 
   const zoomBy = (factor: number) => {
     const el = document.querySelector('.canvas-shell') as HTMLElement | null;
@@ -83,6 +126,16 @@ export function TopBar({ onOpenBoard }: { onOpenBoard: () => void }) {
             {cols} × {rows} 格
           </span>
           {!readOnly ? <Icon name="chevron-down" size={13} /> : null}
+        </button>
+        <button
+          className={`closure-chip ${
+            !hasTiles ? 'is-empty' : validation.closed ? 'is-closed' : 'is-open'
+          }`}
+          onClick={onClosureClick}
+          title={closureTitle || '赛道连通状态'}
+        >
+          <Icon name={!hasTiles ? 'info' : validation.closed ? 'check' : 'alert'} size={13} />
+          <span>{closureLabel}</span>
         </button>
       </div>
 

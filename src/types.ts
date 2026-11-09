@@ -91,6 +91,72 @@ export type Primitive =
       fill?: string;
     };
 
+export type Side = 'n' | 'e' | 's' | 'w';
+export type PortDir = 'in' | 'out' | 'both';
+
+/** Connection point on a tile edge. */
+export interface Port {
+  id: string;
+  side: Side;
+  /** Position along the edge, 0..1. Defaults to 0.5 (midpoint). */
+  offset?: number;
+  dir?: PortDir;
+  /** Lane width in meters, used for compatibility warnings. */
+  laneWidth?: number;
+}
+
+/** A port resolved to board coordinates for one placed tile. */
+export interface WorldPort {
+  key: string;
+  uid: string;
+  defId: string;
+  portId: string;
+  side: Side;
+  offset: number;
+  dir: PortDir;
+  laneWidth: number;
+  point: Pt;
+  normal: Pt;
+}
+
+export type IssueCode =
+  | 'UNKNOWN_DEF'
+  | 'DUPLICATE_UID'
+  | 'OUT_OF_BOARD'
+  | 'TILE_OVERLAP'
+  | 'PORT_GAP'
+  | 'PORT_MISMATCH'
+  | 'NO_PORTS'
+  | 'NOT_CLOSED'
+  | 'NO_START';
+
+export type IssueSeverity = 'error' | 'warning';
+
+export interface Issue {
+  code: IssueCode;
+  severity: IssueSeverity;
+  message: string;
+  uid?: string;
+  portId?: string;
+  at?: Pt;
+  hint?: string;
+}
+
+export interface ValidationStats {
+  tiles: number;
+  connections: number;
+  gaps: number;
+  components: number;
+}
+
+export interface ValidationResult {
+  closed: boolean;
+  issues: Issue[];
+  stats: ValidationStats;
+  ports: WorldPort[];
+  gaps: WorldPort[];
+}
+
 export interface TileDef {
   id: string;
   name: string;
@@ -99,6 +165,7 @@ export interface TileDef {
   description: string;
   sizeM: TileSize;
   primitives: Primitive[];
+  ports?: Port[];
 }
 
 export interface Viewport {

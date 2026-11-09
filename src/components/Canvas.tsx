@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { PlacedTile } from '../types';
+import type { PlacedTile, ValidationResult } from '../types';
 import {
   canPlace,
   clamp,
@@ -32,7 +32,7 @@ function niceScale(pxPerMeter: number): number {
   return steps.find((step) => step >= target) ?? 100;
 }
 
-export function Canvas() {
+export function Canvas({ validation }: { validation: ValidationResult }) {
   const doc = useStore((state) => state.doc);
   const viewport = useStore((state) => state.viewport);
   const selected = useStore((state) => state.selected);
@@ -82,6 +82,11 @@ export function Canvas() {
   } | null>(null);
 
   const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const gapSet = useMemo(() => new Set(validation.gaps.map((port) => port.key)), [validation.gaps]);
+  const selectedPorts = useMemo(
+    () => validation.ports.filter((port) => selectedSet.has(port.uid)),
+    [selectedSet, validation.ports],
+  );
 
   const fit = useCallback(() => {
     const el = containerRef.current;
@@ -487,6 +492,33 @@ export function Canvas() {
               </g>
             );
           })}
+
+          {!drag.active
+            ? validation.gaps.map((gap) => (
+                <g
+                  key={gap.key}
+                  className="port-gap"
+                  transform={`translate(${gap.point.x} ${gap.point.y})`}
+                  pointerEvents="none"
+                >
+                  <circle r={0.18} className="port-gap-halo" />
+                  <circle r={0.075} className="port-gap-dot" />
+                </g>
+              ))
+            : null}
+
+          {selectedPorts
+            .filter((port) => !gapSet.has(port.key))
+            .map((port) => (
+              <circle
+                key={`selected-${port.key}`}
+                cx={port.point.x}
+                cy={port.point.y}
+                r={0.07}
+                className="port-dot"
+                pointerEvents="none"
+              />
+            ))}
 
           {ghost ? (
             <g pointerEvents="none">
