@@ -46,21 +46,26 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # 首次运行时尝试自动开启 Pages（Source = GitHub Actions）。
-      # 若账号权限不允许，则需要在仓库 Settings → Pages 手动选一次。
+      # ---- 发布闸门 ----
+      # 未到发布阶段时，下面三步会被跳过：流水线只做 CI（typecheck/test/build），
+      # 提交记录保持绿色，不会每次 push 都挂一个失败的部署。
+      # 正式发布时：Settings → Pages 选 GitHub Actions，
+      # 再在 Settings → Secrets and variables → Actions → Variables 新建 PAGES_READY=true。
       - name: Configure Pages
+        if: vars.PAGES_READY == 'true'
         uses: actions/configure-pages@v5
-        continue-on-error: true
         with:
           enablement: true
 
       - name: Upload artifact
+        if: vars.PAGES_READY == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: build
+    if: vars.PAGES_READY == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
