@@ -468,6 +468,8 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 - 仓库地址：<https://github.com/yaris23333/rc_track_builder>（Public，`main` 已同步）；
 - 远端已配置为 `git@github-yaris:yaris23333/rc_track_builder.git`（通过 `github-yaris` 别名使用个人专用 key）；
 - 仓库内无 `.env`、无私钥、无构建产物；
+- **提交身份按仓库隔离**：本仓库在 `.git/config` 里使用个人 noreply 邮箱 `263910765+yaris23333@users.noreply.github.com`（可关联 GitHub 账号，不暴露真实邮箱）；全局 `~/.gitconfig` 仍为 `gaohaizhao@fenrir-tec.com`，公司仓库与外层 `~/` 仓库不受影响。新克隆时需手动设置一次，或执行 `git config user.email` 覆盖；
+- GUI 客户端使用 Sourcetree 4.2.19（system git `/usr/bin/git`）；remote 保持 SSH 别名 `github-yaris`，**不要让 Sourcetree 的 GitHub 账号/OAuth 接管该仓库**，否则 remote 会被改写为 HTTPS；
 - 项目目录位于用户主目录的另一个 Git 仓库内（`/Users/feilang` 是仓库根），**本项目已使用独立 `.git`**，提交时注意不要误操作外层仓库。
 
 ---
