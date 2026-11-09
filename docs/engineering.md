@@ -199,6 +199,25 @@ docs(requirements): clarify FR-04 issue codes
 - 正式发布建议自有域名（约 ¥70/年），便于品牌与迁移；
 - HTTPS 由平台自动签发与续期，不需要自己维护证书。
 
+### 3.4 已落地的部署流水线（GitHub Pages 通道）
+
+`.github/workflows/deploy.yml` 已就绪，采用**发布闸门**设计：
+
+- `push main` 触发，先跑 `install --frozen-lockfile → typecheck → test → build`，即 CI 门禁；
+- 配置 Pages、上传产物、`deploy-pages` 三步由仓库变量 `PAGES_READY == 'true'` 控制，未发布前自动跳过，提交记录保持绿色；
+- `vite.config.ts` 的 `base` 已改为相对路径（`./`），同一份 `dist/` 既能挂在域名根目录，也能挂在 `/<repo>/` 子路径，换托管平台不用改配置。
+
+正式发布（选 GitHub Pages 时）只需两步，均需仓库所有者操作：
+
+1. `Settings → Pages → Build and deployment → Source` 选 **GitHub Actions**；
+2. `Settings → Secrets and variables → Actions → Variables` 新建 `PAGES_READY = true`。
+
+之后每次 `git push main` 自动构建并发布，地址形如 `https://<user>.github.io/<repo>/`。
+
+若最终改选 Cloudflare Pages：可直接在控制台连接 GitHub 仓库（构建命令 `pnpm build`，产物目录 `dist`），或对本工作流改用 Wrangler 部署，静态产物无需任何修改。
+
+**时间成本提醒**：面向国内用户的正式发布，域名注册 + ICP 备案是 1–3 周的串行流程，应在发布节点前启动，而不是发布当天。
+
 ---
 
 ## 4. 后端：要不要、什么时候要、怎么选
@@ -437,10 +456,10 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 ### 9.2 尚未完成
 
 - [ ] 添加 `LICENSE`（最高优先，见 §2.6）；
-- [ ] 开启 Actions；
-- [ ] 接入 Cloudflare Pages；
+- [x] 开启 Actions（`deploy.yml` 已跑通，CI 门禁生效）；
+- [ ] 接入 Pages 托管（流水线已就绪，等待发布时开启开关，见 §3.4）；
 - [ ] 配置自定义域名（可选）；
-- [ ] 加 `CHANGELOG.md` 与 `.github/workflows/ci.yml`；
+- [ ] 加 `CHANGELOG.md`；
 - [ ] 分支保护与 Dependabot（尽快）。
 
 ### 9.3 已确认的工程事实
@@ -483,3 +502,4 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 |---|---|---|
 | 2026-11-09 | v0.1 | 初稿：仓库与 Git 工作流、静态部署、后端选型、CI/CD、成本与阻塞项 |
 | 2026-11-09 | v0.2 | 仓库改为公开并完成首次 push；账号隔离、托管选型与检查清单同步更新 |
+| 2026-11-09 | v0.3 | 新增 §3.4：GitHub Pages 部署流水线（`PAGES_READY` 发布闸门）、`base` 改相对路径；上线动作推迟到发布节点 |
