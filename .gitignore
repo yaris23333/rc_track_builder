@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.pnpm-store/
+.tmp/
+tmp-downloads/
+/app-*.png
+*.log
+.DS_Store
+out/
+coverage/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+*.local
+.vscode/
+.idea/
