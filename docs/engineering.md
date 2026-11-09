@@ -1,7 +1,7 @@
 # 项目工程说明（Engineering Handbook）
 
 > 文档编号：ENG-1
-> 版本：v0.1
+> 版本：v0.2
 > 状态：初稿（随工程实践更新）
 > 日期：2026-11-09
 > 关联：[requirements-phase1.md](requirements-phase1.md)（产品需求）、[spec-v1.md](spec-v1.md)（v1 基线）、[feasibility.md](feasibility.md)（参考站分析）
@@ -29,7 +29,7 @@
 2. **一期不需要后端**。当前产品是纯静态 SPA：分享用 URL hash，数据在浏览器本地。托管到 Cloudflare Pages 即可，零服务器、零数据库、零月费（域名除外）。
 3. **不要租 VPS，更不要长期开一台电脑当生产服务器**。等真正出现"短链、云存档、账号、远程 MCP"需求时，用 Serverless（Cloudflare Workers + KV/D1）按需加，成本从 0 开始。
 4. **GitHub 负责"代码与协作"，Cloudflare 负责"运行与分发"**，两者职责分离。
-5. 当前唯一的工程阻塞：本机 SSH key 属于 `gaohaizhao-fenrir`，目标仓库在 `yaris23333` 名下，**需要先解决账号权限**（见 §9.1）。
+5. 仓库已公开并完成首次推送（`main`），账号隔离已解决；下一步是 `LICENSE`、CI 与托管接入（见 §9）。
 
 ---
 
@@ -42,10 +42,10 @@
 | 托管 | GitHub |
 | 账号 | <https://github.com/yaris23333> |
 | 仓库名 | `rc_track_builder` |
-| 可见性 | 先 Private，稳定版后转 Public |
+| 可见性 | **Public**（2026-11-09 提前开放；原计划稳定后公开） |
 | 默认分支 | `main` |
 | 本地目录 | `~/Desktop/rcTrack`（目录名与仓库名不同，不影响） |
-| Remote | `git@github.com:yaris23333/rc_track_builder.git` |
+| Remote | `git@github-yaris:yaris23333/rc_track_builder.git` |
 
 本地已完成：
 
@@ -53,10 +53,11 @@
 git init -b main
 git add -A
 git commit -m "chore: bootstrap rc_track_builder repository"
-git remote add origin git@github.com:yaris23333/rc_track_builder.git
+git remote add origin git@github-yaris:yaris23333/rc_track_builder.git
+git push -u origin main
 ```
 
-尚未完成：把公钥加入个人账号、在 GitHub 创建仓库并 `git push -u origin main`（见 §9.1）。
+已完成首次 push（2026-11-09）；仓库地址：<https://github.com/yaris23333/rc_track_builder>。
 
 ### 2.2 分支模型
 
@@ -134,14 +135,14 @@ docs(requirements): clarify FR-04 issue codes
 4. CI 构建产物，创建 GitHub Release（附构建说明）；
 5. Cloudflare Pages 自动部署 `main`，或按 tag 手动回滚。
 
-### 2.6 私有 → 开源切换清单
+### 2.6 公开仓库检查清单
 
-转 Public 之前逐项确认：
+仓库已于 2026-11-09 提前公开（原计划稳定版后公开）。以下项按紧急程度补齐：
 
-- [ ] `LICENSE` 已定（对应需求文档 D8 / 附录 B Q1）；
-- [ ] `README.md` 无内部信息、无未授权素材；
+- [ ] **`LICENSE`（最高优先）**：未声明协议时默认保留所有权利，与"开源免费"目标冲突；需在需求文档 D8 / 附录 B Q1 中拍板后立刻添加；
+- [x] `README.md` 无内部信息、无未授权素材；
+- [x] 全历史 secret 扫描通过（本地规则扫描；建议再开 GitHub Secret Scanning）；
 - [ ] `CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、Issue/PR 模板就绪；
-- [ ] 全历史 secret 扫描通过（`gitleaks` 或 GitHub Secret Scanning）；
 - [ ] 依赖许可证审查（`pnpm licenses list`）；
 - [ ] 示例数据不含真实个人信息；
 - [ ] CI 对 fork PR 正常工作；
@@ -176,17 +177,17 @@ docs(requirements): clarify FR-04 issue codes
 
 ### 3.2 托管选型
 
-| 方案 | 私有仓库免费？ | 静态托管 | Serverless | 预览部署 | 结论 |
+| 方案 | 公开仓库免费？ | 静态托管 | Serverless | 预览部署 | 结论 |
 |---|---|---|---|---|---|
 | **Cloudflare Pages** | 是 | 是，全球 CDN | Workers / KV / D1 / R2 | 每个 PR 一个预览 URL | **推荐** |
-| GitHub Pages | **否**（私有仓库需付费计划） | 是 | 无 | 无 | 开源后再考虑 |
+| GitHub Pages | 是（公开仓库免费） | 是 | 无 | 无 | 可选；无 Functions / 预览 |
 | Vercel | 是（Hobby） | 是 | Functions | 是 | 可选，商用条款需注意 |
 | Netlify | 是 | 是 | Functions | 是 | 可选 |
 | 自建 Nginx + VPS | — | 是 | 自己写 | 自己搭 | 不推荐 |
 
 **选择 Cloudflare Pages 的理由**：
 
-1. 私有仓库也能免费托管（GitHub Pages 在私有仓库下需要付费）；
+1. 公开仓库下 GitHub Pages 也免费，但 Cloudflare 多了 PR 预览与同平台 Workers，后续加后端不用换厂商；
 2. 静态请求与带宽免费额度足够一个社区工具；
 3. PR 预览、原子回滚、自定义域名、HTTPS 开箱即用；
 4. 后续加短链/云存档时，Workers + KV/D1 与 Pages 同平台，迁移成本最低；
@@ -210,7 +211,7 @@ docs(requirements): clarify FR-04 issue codes
 | PR 评审、Issue、里程碑 | ✅ | 项目管理 |
 | CI（构建、测试） | ✅ | GitHub Actions |
 | 定时任务 | ⚠️ 有限 | Actions cron 可跑批处理，但不是请求时后端 |
-| 静态网站托管 | ✅ | Pages（私有仓库需付费） |
+| 静态网站托管 | ✅ | Pages（公开仓库免费） |
 | 按请求执行 API | ❌ | 没有常驻运行时 |
 | 数据库 / 文件存储 | ❌ | 仓库不适合存业务数据与大文件 |
 | 用户登录 / 权限 | ❌ | 需外部服务 |
@@ -268,7 +269,7 @@ docs(requirements): clarify FR-04 issue codes
 |---|---|---|
 | 域名 | 可选 | ≈ ¥70/年 |
 | Cloudflare Pages | 静态托管 | ¥0 |
-| GitHub 私有仓库 | 含 Actions 免费额度 | ¥0 |
+| GitHub 公开仓库 | Actions 分钟数不限 | ¥0 |
 | Serverless（未来） | 免费额度内 | ¥0 起 |
 | BaaS（未来，可选） | 免费额度 | ¥0 起 |
 | VPS（不推荐） | — | $5–20/月 |
@@ -330,7 +331,7 @@ push / pull_request
 - `pnpm audit` / Dependabot；
 - 文档链接检查（可选）。
 
-私有仓库的 Actions 有月度免费分钟数；公开后不限。缓存依赖可显著降低耗时。
+公开仓库的 Actions 分钟数不限。缓存依赖可显著降低耗时。
 
 ### 6.2 CD（部署）
 
@@ -342,7 +343,7 @@ push / pull_request
 ### 6.3 质量门禁
 
 - `main` 必须通过 CI 才能合并；
-- 分支保护（公开后开启必需检查）；
+- 分支保护（公开仓库可免费开启必需检查）；
 - 发布前跑一次 `pnpm build` + 手工冒烟（导出 PNG/PDF/DXF/分享链接）。
 
 ---
@@ -386,13 +387,13 @@ push / pull_request
 
 ## 9. 当前状态与阻塞项
 
-### 9.1 GitHub 账号隔离（阻塞 push）
+### 9.1 GitHub 账号隔离（已解决）
 
 背景：
 
-- `gaohaizhao-fenrir` 是**公司账号**，本机现有 SSH key 属于它；
-- `yaris23333` 是**个人账号**，本项目仓库应放在该账号下；
-- 目标仓库尚未创建，当前 key 对个人账号无权限。
+- `gaohaizhao-fenrir` 是**公司账号**，本机原有 SSH key 属于它；
+- `yaris23333` 是**个人账号**，本项目仓库放在该账号下；
+- 已为个人账号生成专用 key，两个身份互不共用。
 
 原则：**两个身份不共用 key**。不要把公司 key 加到个人账号，也不要把个人 key 用于公司仓库，否则权限回收或离职时会互相牵连。
 
@@ -419,7 +420,7 @@ git remote set-url origin git@github-yaris:yaris23333/rc_track_builder.git
 ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 ```
 
-然后把 `~/.ssh/id_ed25519_yaris23333.pub` 添加到 GitHub 个人账号，创建私有仓库后 `git push -u origin main`。
+已在 GitHub 个人账号添加公钥、创建公开仓库，并完成首次 push。
 
 备选：使用个人账号的 fine-grained PAT 走 HTTPS，token 存系统钥匙串，不写入仓库。
 
@@ -429,24 +430,23 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 - [x] `~/.ssh/config` 增加 `github-yaris` 别名，公司账号配置保持不变
 - [x] 加入 ssh-agent / 钥匙串
 - [x] remote 切换为 `git@github-yaris:yaris23333/rc_track_builder.git`
-- [ ] 将公钥添加到 yaris23333 个人账号
-- [ ] 在个人账号创建私有仓库 `rc_track_builder`
-- [ ] 首次 push
+- [x] 将公钥添加到 yaris23333 个人账号
+- [x] 在个人账号创建**公开**仓库 `rc_track_builder`
+- [x] 首次 push（`main` → `origin/main`）
 
 ### 9.2 尚未完成
 
-- [ ] 将公钥 `~/.ssh/id_ed25519_yaris23333.pub` 添加到 yaris23333 个人账号；
-- [ ] 在 GitHub 创建 `yaris23333/rc_track_builder`（Private）；
-- [ ] 首次 push；
+- [ ] 添加 `LICENSE`（最高优先，见 §2.6）；
 - [ ] 开启 Actions；
 - [ ] 接入 Cloudflare Pages；
 - [ ] 配置自定义域名（可选）；
 - [ ] 加 `CHANGELOG.md` 与 `.github/workflows/ci.yml`；
-- [ ] 分支保护与 Dependabot（公开前）。
+- [ ] 分支保护与 Dependabot（尽快）。
 
 ### 9.3 已确认的工程事实
 
-- 本地仓库已初始化，首个提交 `a6947dd`；
+- 本地仓库已初始化，首个提交 `a6947dd`，并已推送到公开仓库；
+- 仓库地址：<https://github.com/yaris23333/rc_track_builder>（Public，`main` 已同步）；
 - 远端已配置为 `git@github-yaris:yaris23333/rc_track_builder.git`（通过 `github-yaris` 别名使用个人专用 key）；
 - 仓库内无 `.env`、无私钥、无构建产物；
 - 项目目录位于用户主目录的另一个 Git 仓库内（`/Users/feilang` 是仓库根），**本项目已使用独立 `.git`**，提交时注意不要误操作外层仓库。
@@ -457,10 +457,10 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 
 | 里程碑 | 内容 | 出口 |
 |---|---|---|
-| **M0 仓库 bootstrap** | 本地仓库、首次提交、私有远端、CI 骨架 | `main` 可构建，推送成功 |
+| **M0 仓库 bootstrap** | 本地仓库、首次提交、公开远端、首个 push | `main` 推送成功（已完成） |
 | **M1 P0 交付** | 端口/校验/搭建图/DXF/测量/core | 对应需求文档 P0 验收通过，Preview 可访问 |
-| **M2 P1 交付** | MCP/Skill/开源脚手架 | 外部 agent 演示通过，私有 Beta |
-| **M3 公开发布** | 仓库转 Public、License、文档站 | 稳定版上线，社区可贡献 |
+| **M2 P1 交付** | MCP/Skill/开源脚手架 | 外部 agent 演示通过，邀请制 Beta |
+| **M3 公开发布** | License、文档站、稳定版 | 稳定版上线，社区可贡献 |
 
 ---
 
@@ -468,10 +468,10 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 
 | # | 问题 | 建议 | 截止 |
 |---|---|---|---|
-| E1 | GitHub 账号权限（§9.1） | 把公钥加到 yaris23333 | 立即 |
+| E1 | GitHub 账号权限（§9.1） | ✅ 已完成：专用 SSH key + `github-yaris` 别名 | 已完成 |
 | E2 | 托管平台 | Cloudflare Pages | M0 |
 | E3 | 域名 | 先 `*.pages.dev`，稳定后再买 | M2 |
-| E4 | 开源协议 | 见需求文档 D8 / Q1 | 公开前 |
+| E4 | 开源协议 | 见需求文档 D8 / Q1 | 尽快（仓库已公开） |
 | E5 | 是否引入统计 | 默认不引入；如引入需告知并去标识化 | M2 |
 | E6 | 云端功能优先级 | 短链 > 云存档 > 远程 MCP | M2 评估 |
 
@@ -482,3 +482,4 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 | 日期 | 版本 | 变更 |
 |---|---|---|
 | 2026-11-09 | v0.1 | 初稿：仓库与 Git 工作流、静态部署、后端选型、CI/CD、成本与阻塞项 |
+| 2026-11-09 | v0.2 | 仓库改为公开并完成首次 push；账号隔离、托管选型与检查清单同步更新 |
