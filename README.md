@@ -189,6 +189,7 @@ docs/
   feasibility.md          参考站分析
   spec-v1.md              v1 规格
   requirements-phase1.md  功能需求一期（FR-1）
+  engineering.md          项目工程说明（仓库/部署/后端选型）
 ```
 
 ---
