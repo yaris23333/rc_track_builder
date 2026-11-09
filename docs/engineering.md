@@ -386,26 +386,42 @@ push / pull_request
 
 ## 9. 当前状态与阻塞项
 
-### 9.1 GitHub 账号与 SSH Key 不匹配（阻塞 push）
+### 9.1 GitHub 账号隔离（阻塞 push）
 
-现状：
+背景：
 
-- 本机 SSH key 认证到的 GitHub 账号是 `gaohaizhao-fenrir`；
-- 目标仓库属于 `yaris23333`；
-- `git ls-remote git@github.com:yaris23333/rc_track_builder.git` 返回 `Repository not found`（私有仓库未创建，或当前 key 无权限）。
+- `gaohaizhao-fenrir` 是**公司账号**，本机现有 SSH key 属于它；
+- `yaris23333` 是**个人账号**，本项目仓库应放在该账号下；
+- 目标仓库尚未创建，当前 key 对个人账号无权限。
 
-三种解决方式（任选其一）：
+原则：**两个身份不共用 key**。不要把公司 key 加到个人账号，也不要把个人 key 用于公司仓库，否则权限回收或离职时会互相牵连。
 
-1. **把公钥加到 yaris23333**（推荐）：
-   - 复制 `~/.ssh/id_rsa.pub`；
-   - GitHub → Settings → SSH and GPG keys → New SSH key；
-   - 然后在 yaris23333 下创建私有仓库 `rc_track_builder`；
-   - 本机执行 `git push -u origin main`。
-2. **使用 yaris23333 的 Personal Access Token（HTTPS）**：
-   - 生成 fine-grained token，仅授权该仓库；
-   - `git remote set-url origin https://github.com/yaris23333/rc_track_builder.git`；
-   - 用系统钥匙串或 `gh auth login` 保存，不写入仓库。
-3. **改用 gaohaizhao-fenrir 账号建仓**：如果账号归属可接受，直接在该账号下创建并推送。
+推荐做法：为个人账号生成专用 key，并用 SSH host alias 与公司身份并存。
+
+```bash
+ssh-keygen -t ed25519 -C "yaris23333@personal" -f ~/.ssh/id_ed25519_yaris23333
+```
+
+`~/.ssh/config` 追加：
+
+```sshconfig
+Host github-yaris
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_yaris23333
+  IdentitiesOnly yes
+```
+
+个人仓库的 remote 使用别名：
+
+```bash
+git remote set-url origin git@github-yaris:yaris23333/rc_track_builder.git
+ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
+```
+
+然后把 `~/.ssh/id_ed25519_yaris23333.pub` 添加到 GitHub 个人账号，创建私有仓库后 `git push -u origin main`。
+
+备选：使用个人账号的 fine-grained PAT 走 HTTPS，token 存系统钥匙串，不写入仓库。
 
 ### 9.2 尚未完成
 
