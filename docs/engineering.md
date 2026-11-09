@@ -56,7 +56,7 @@ git commit -m "chore: bootstrap rc_track_builder repository"
 git remote add origin git@github.com:yaris23333/rc_track_builder.git
 ```
 
-尚未完成：在 GitHub 创建仓库并 `git push -u origin main`（权限问题见 §9.1）。
+尚未完成：把公钥加入个人账号、在 GitHub 创建仓库并 `git push -u origin main`（见 §9.1）。
 
 ### 2.2 分支模型
 
@@ -423,8 +423,19 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 
 备选：使用个人账号的 fine-grained PAT 走 HTTPS，token 存系统钥匙串，不写入仓库。
 
+当前进度（2026-11-09）：
+
+- [x] 生成 `~/.ssh/id_ed25519_yaris23333`（ed25519，无口令，指纹 `SHA256:AXCOyu9p4sZIx0eiYhEsMrLVxZ9xgKda4FuL6C52Vgg`）
+- [x] `~/.ssh/config` 增加 `github-yaris` 别名，公司账号配置保持不变
+- [x] 加入 ssh-agent / 钥匙串
+- [x] remote 切换为 `git@github-yaris:yaris23333/rc_track_builder.git`
+- [ ] 将公钥添加到 yaris23333 个人账号
+- [ ] 在个人账号创建私有仓库 `rc_track_builder`
+- [ ] 首次 push
+
 ### 9.2 尚未完成
 
+- [ ] 将公钥 `~/.ssh/id_ed25519_yaris23333.pub` 添加到 yaris23333 个人账号；
 - [ ] 在 GitHub 创建 `yaris23333/rc_track_builder`（Private）；
 - [ ] 首次 push；
 - [ ] 开启 Actions；
@@ -436,7 +447,7 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 ### 9.3 已确认的工程事实
 
 - 本地仓库已初始化，首个提交 `a6947dd`；
-- 远端已配置为 `git@github.com:yaris23333/rc_track_builder.git`；
+- 远端已配置为 `git@github-yaris:yaris23333/rc_track_builder.git`（通过 `github-yaris` 别名使用个人专用 key）；
 - 仓库内无 `.env`、无私钥、无构建产物；
 - 项目目录位于用户主目录的另一个 Git 仓库内（`/Users/feilang` 是仓库根），**本项目已使用独立 `.git`**，提交时注意不要误操作外层仓库。
 
