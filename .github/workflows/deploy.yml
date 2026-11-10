@@ -5,13 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# GITHUB_TOKEN 的最小权限：读代码、写 Pages、用 OIDC 校验部署来源
+# 最小权限：读代码、写 Pages、用 OIDC 校验部署来源
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 同一时间只跑一个部署；新的推送取消尚未完成的旧部署
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -19,6 +18,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # GitHub Pages 项目站部署在 /<repo>/ 子路径，路由 basename 与资源 base 都要跟着走
+      APP_BASE: /${{ github.event.repository.name }}/
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,10 +48,14 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # GitHub Pages 没有 SPA rewrite：把 index.html 复制成 404.html，
+      # 直接访问 /s/<payload> 这类深链才能兜底到前端路由。
+      - name: SPA fallback
+        run: cp apps/web/build/client/index.html apps/web/build/client/404.html
+
       # ---- 发布闸门 ----
-      # 未到发布阶段时，下面三步会被跳过：流水线只做 CI（typecheck/test/build），
-      # 提交记录保持绿色，不会每次 push 都挂一个失败的部署。
-      # 正式发布时：Settings → Pages 选 GitHub Actions，
+      # 未到发布阶段时下面两步跳过，流水线只做 CI（typecheck/test/build），提交记录保持绿色。
+      # 正式发布：Settings → Pages 选 GitHub Actions，
       # 再在 Settings → Secrets and variables → Actions → Variables 新建 PAGES_READY=true。
       - name: Configure Pages
         if: vars.PAGES_READY == 'true'
@@ -61,7 +67,7 @@ jobs:
         if: vars.PAGES_READY == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: apps/web/build/client
 
   deploy:
     needs: build

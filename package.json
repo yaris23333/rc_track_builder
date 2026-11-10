@@ -1,28 +1,20 @@
 {
-  "name": "rc-track-designer",
+  "name": "rc-track-builder",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+  "version": "0.2.0",
+  "description": "RC Track Designer — monorepo（Web 编辑器 + 可复用核心包）",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=20"
   },
-  "dependencies": {
-    "fflate": "^0.8.3",
-    "jspdf": "^4.2.1",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "zustand": "^5.0.16"
+  "scripts": {
+    "dev": "pnpm --filter @rctrack/web dev",
+    "build": "pnpm --filter @rctrack/web build",
+    "preview": "pnpm --filter @rctrack/web preview",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test"
   },
   "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.2.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.3.6",
-    "vitest": "^5.1.0"
+    "typescript": "^5.9.3"
   }
 }

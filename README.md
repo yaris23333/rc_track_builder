@@ -15,17 +15,18 @@ pnpm dev
 
 打开 `http://127.0.0.1:5173`。
 
-生产构建：
+生产构建与校验：
 
 ```bash
-pnpm build
-pnpm preview
-pnpm test
+pnpm typecheck   # core + web 类型检查
+pnpm test        # @rctrack/core 单测（21 用例）
+pnpm build       # 产物在 apps/web/build/client
+pnpm preview     # 本地预览构建产物
 ```
 
-技术栈：React 19 + TypeScript + Vite + Zustand + SVG。无后端，纯静态部署。
+技术栈：React 19 + React Router 7（framework mode / SPA）+ TypeScript + Vite + Zustand + SVG。pnpm workspace 单仓多包，无后端，纯静态部署。
 
-模型层单测：`pnpm test`（严格整数倍、占位、导入校验）。
+仓库结构：`apps/web`（编辑器，路由与 UI）+ `packages/core`（纯领域核心，可被 MCP/CLI 复用）。分层规则与迁移映射见 [docs/architecture.md](docs/architecture.md)。
 
 ---
 
@@ -94,7 +95,7 @@ isMultiple(widthM, cellSize) && isMultiple(heightM, cellSize)
 - 显示最近合法值，例如 `30.1m` 在 `1m` 网格下提示 `30m / 31m`；
 - 可以一键取最近合法值，但仍然需要用户确认应用。
 
-实现位置：[`src/model/geometry.ts`](src/model/geometry.ts)、[`src/components/BoardSettingsModal.tsx`](src/components/BoardSettingsModal.tsx)。
+实现位置：[`packages/core/src/geometry.ts`](packages/core/src/geometry.ts)、[`apps/web/app/components/BoardSettingsModal.tsx`](apps/web/app/components/BoardSettingsModal.tsx)。
 
 ---
 
@@ -156,41 +157,48 @@ interface PlacedTile {
 ## 分享链接
 
 ```text
-https://your-site/#/s/<deflate + base64url>
+https://your-site/s/<deflate + base64url>
 ```
 
 - 文档 JSON → `fflate` deflate → base64url；
 - 分享数据不经过服务器；
 - 打开后是只读预览，顶部“复制到本地”可继续编辑；
+- 旧版 `#/s/<...>` 链接不会失效，打开后自动跳转到新地址；
 - 当前 22 块瓦片的链接约 1.3 KB；
 - 链接过长时提示先导出 JSON；
 - 代码里已预留后续接短链服务的空间。
 
-实现位置：[`src/model/share.ts`](src/model/share.ts)。
+实现位置：编解码在 [`packages/core/src/share.ts`](packages/core/src/share.ts)，URL 与本地存储组装在 [`apps/web/app/lib/share.ts`](apps/web/app/lib/share.ts)。
 
 ---
 
 ## 目录结构
 
 ```text
-src/
-  components/        UI（TopBar、Palette、Canvas、Inspector、Modal…）
-  model/
-    geometry.ts      物理优先网格、碰撞、严格校验、示例数据
-    tiles.ts         8 种瓦片几何
-    share.ts         压缩分享、本地存储
-  store/useStore.ts  文档、选择、历史、视口
-  export/
-    png.ts           SVG → Canvas → PNG
-    pdf.ts           300 DPI A4 位图 PDF
-    dxf.ts           DXF R12/R2000 writer
-  styles.css         设计系统
+apps/web/app/
+  root.tsx                 HTML 骨架、首屏占位、错误边界
+  routes.ts                路由表：/ · /s/:token · 404
+  routes/                  页面入口（clientLoader 负责取数）
+  components/              UI 部件 + EditorApp 编辑器外壳
+  store/useStore.ts        文档、选择、历史、视口、Toast
+  lib/share.ts             分享链接、localStorage、旧 hash 兼容
+  lib/export/              PNG / PDF / DXF 下载封装
+  styles.css               设计系统
+packages/core/src/
+  geometry.ts              物理优先网格、碰撞、严格校验
+  tiles.ts / ports.ts      8 种瓦片几何与端口
+  validate.ts              闭合校验与 Issue 码
+  share.ts                 分享编解码（无 DOM）
+  export/dxf.ts            DXF R12/R2000 字符串构建
 docs/
+  architecture.md         代码架构与分层规则
   feasibility.md          参考站分析
   spec-v1.md              v1 规格
   requirements-phase1.md  功能需求一期（FR-1）
   engineering.md          项目工程说明（仓库/部署/后端选型）
 ```
+
+各层依赖是单向的：`apps/web` → `packages/core`，core 不允许依赖 DOM、React 或 Zustand。完整规则见 [docs/architecture.md](docs/architecture.md)。
 
 ---
 

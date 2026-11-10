@@ -1,0 +1,29 @@
+{
+  "name": "@rctrack/web",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "react-router dev",
+    "build": "react-router build",
+    "preview": "vite preview --outDir build/client",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@rctrack/core": "workspace:*",
+    "@react-router/node": "^7.18.5",
+    "isbot": "^5",
+    "jspdf": "^4.2.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^7.18.5",
+    "zustand": "^5.0.16"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^7.18.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.6"
+  }
+}

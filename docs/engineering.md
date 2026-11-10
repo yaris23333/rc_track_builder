@@ -149,6 +149,20 @@ docs(requirements): clarify FR-04 issue codes
 - [ ] 分支保护、Dependabot、Security advisories 已开启；
 - [ ] 首发 Release 说明与迁移指南。
 
+### 2.7 代码架构（2026-11-09 起）
+
+仓库已从单包 Vite SPA 迁移为 **pnpm workspace monorepo + React Router 7 framework mode（SPA）**：
+
+| 包/目录 | 职责 | 约束 |
+|---|---|---|
+| `apps/web` | 编辑器 UI、路由、导出下载、浏览器能力 | 不复制领域算法 |
+| `packages/core` | 几何、瓦片、端口、校验、分享编解码、DXF 构建 | 禁止依赖 DOM / React / Zustand |
+
+- core 通过 `exports` 直接暴露 `src/index.ts`，本地开发无需预构建；真正发布 npm 时再补打包产物；
+- 完整的目录说明、路由表、数据流与"旧结构 → 新结构"映射见 [architecture.md](architecture.md)；
+- 新增领域逻辑先判断归属：能被 MCP/CLI/CI 复用 → `packages/core`；只在浏览器里成立 → `apps/web/app/lib`。
+
+
 ---
 
 ## 3. 部署架构（一期）
@@ -166,7 +180,7 @@ docs(requirements): clarify FR-04 issue codes
                │ HTTPS（仅取静态文件）
 ┌──────────────▼───────────────┐
 │ Cloudflare Pages（CDN）       │
-│  dist/ 静态资源               │
+│  build/client 静态资源        │
 └──────────────────────────────┘
 ```
 
@@ -205,7 +219,8 @@ docs(requirements): clarify FR-04 issue codes
 
 - `push main` 触发，先跑 `install --frozen-lockfile → typecheck → test → build`，即 CI 门禁；
 - 配置 Pages、上传产物、`deploy-pages` 三步由仓库变量 `PAGES_READY == 'true'` 控制，未发布前自动跳过，提交记录保持绿色；
-- `vite.config.ts` 的 `base` 已改为相对路径（`./`），同一份 `dist/` 既能挂在域名根目录，也能挂在 `/<repo>/` 子路径，换托管平台不用改配置。
+- 产物目录改为 `apps/web/build/client`（React Router SPA 模式）；`APP_BASE` 同时驱动 Vite `base` 与路由 `basename`，GitHub Pages 项目站由工作流自动设为 `/<repo>/`，自定义域名不设置即可；
+- GitHub Pages 没有 SPA rewrite，工作流会把 `index.html` 复制为 `404.html`，保证 `/s/<payload>` 深链可用。
 
 正式发布（选 GitHub Pages 时）只需两步，均需仓库所有者操作：
 
@@ -214,7 +229,7 @@ docs(requirements): clarify FR-04 issue codes
 
 之后每次 `git push main` 自动构建并发布，地址形如 `https://<user>.github.io/<repo>/`。
 
-若最终改选 Cloudflare Pages：可直接在控制台连接 GitHub 仓库（构建命令 `pnpm build`，产物目录 `dist`），或对本工作流改用 Wrangler 部署，静态产物无需任何修改。
+若最终改选 Cloudflare Pages：可直接在控制台连接 GitHub 仓库（构建命令 `pnpm install && pnpm build`，产物目录 `apps/web/build/client`），SPA 深链由 `apps/web/public/_redirects` 兜底。
 
 **时间成本提醒**：面向国内用户的正式发布，域名注册 + ICP 备案是 1–3 周的串行流程，应在发布节点前启动，而不是发布当天。
 
@@ -320,7 +335,7 @@ pnpm preview    # 预览构建产物
 
 约定：
 
-- 不提交 `node_modules/`、`dist/`、`.pnpm-store/`、本地 `.env`；
+- 不提交 `node_modules/`、`build/`、`.react-router/`、`.pnpm-store/`、本地 `.env`；
 - 需要环境变量时提交 `.env.example`，真实值走 GitHub Secrets / 平台变量；
 - 构建必须可重复：锁文件进仓库，CI 用 `--frozen-lockfile`。
 
@@ -330,17 +345,21 @@ pnpm preview    # 预览构建产物
 
 ### 6.1 CI（GitHub Actions）
 
-一期流水线（`.github/workflows/ci.yml`）：
+两条工作流：
+
+| 文件 | 触发 | 作用 |
+|---|---|---|
+| `.github/workflows/ci.yml` | `pull_request`、非 `main` 分支 push | `install → typecheck → test → build`，PR 门禁 |
+| `.github/workflows/deploy.yml` | `push main`、手动 | 同上，并在 `PAGES_READY=true` 时发布 Pages |
 
 ```text
-push / pull_request
-  → checkout
-  → setup node + pnpm（带缓存）
-  → pnpm install --frozen-lockfile
-  → pnpm typecheck
-  → pnpm test
-  → pnpm build
-  → 上传 dist  artifact
+→ checkout
+→ setup node + pnpm（带缓存）
+→ pnpm install --frozen-lockfile
+→ pnpm typecheck   # core tsc + web tsc
+→ pnpm test        # @rctrack/core vitest
+→ pnpm build       # react-router build → apps/web/build/client
+→ （deploy）SPA fallback + 上传 Pages artifact
 ```
 
 后续追加：
@@ -507,3 +526,4 @@ ssh -T git@github-yaris   # 期望输出：Hi yaris23333!
 | 2026-11-09 | v0.2 | 仓库改为公开并完成首次 push；账号隔离、托管选型与检查清单同步更新 |
 | 2026-11-09 | v0.3 | 新增 §3.4：GitHub Pages 部署流水线（`PAGES_READY` 发布闸门）、`base` 改相对路径；上线动作推迟到发布节点 |
 | 2026-11-09 | v0.4 | 提交身份统一为 `yaris23`，并按此重写全部历史（内容不变，仅元数据） |
+| 2026-11-09 | v0.5 | 迁移为 monorepo + React Router 7 SPA：新增 `packages/core`、路由化 Web、`APP_BASE`、`ci.yml`；详见 architecture.md |
